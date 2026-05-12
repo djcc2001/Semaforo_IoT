@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semáforo IoT</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; font-family: 'Outfit', sans-serif; overflow: hidden; }
+body { background: #0a0015; position: relative; }
+.bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+.blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.45; animation: drift linear infinite; }
+.b1 { width: 500px; height: 500px; background: radial-gradient(circle, #7c3aed, #4c1d95); top: -150px; left: -100px; animation-duration: 18s; }
+.b2 { width: 400px; height: 400px; background: radial-gradient(circle, #b45309, #92400e); top: 50%; right: -100px; animation-duration: 22s; animation-delay: -8s; }
+.b3 { width: 350px; height: 350px; background: radial-gradient(circle, #dc2626, #991b1b); bottom: -80px; left: 30%; animation-duration: 20s; animation-delay: -4s; }
+@keyframes drift {
+  0%   { transform: translate(0,0) scale(1); }
+  25%  { transform: translate(40px,-30px) scale(1.05); }
+  50%  { transform: translate(-20px,50px) scale(0.95); }
+  75%  { transform: translate(30px,20px) scale(1.03); }
+  100% { transform: translate(0,0) scale(1); }
+}
+.wrapper { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; gap: 20px; }
+.status-pill { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.07); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.12); border-radius: 100px; padding: 7px 18px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.6); letter-spacing: 0.8px; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; animation: blink 2s ease infinite; }
+@keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 700; color: #fff; letter-spacing: -1px; text-align: center; }
+h1 em { font-style: normal; background: linear-gradient(135deg, #fbbf24, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.main-card { background: rgba(255,255,255,0.06); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.1); border-radius: 32px; padding: 40px; display: flex; gap: 48px; align-items: center; max-width: 780px; width: 100%; }
+.semaforo-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.semaforo { background: #111; border: 3px solid #333; border-radius: 20px; padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
+.luz { width: 72px; height: 72px; border-radius: 50%; border: 3px solid #222; transition: all 0.4s ease; }
+.luz-rojo  { background: #1a0000; }
+.luz-ambar { background: #1a1000; }
+.luz-verde { background: #001a00; }
+.luz-rojo.activa  { background: #ef4444; box-shadow: 0 0 30px #ef4444, 0 0 60px rgba(239,68,68,0.4); border-color: #f87171; }
+.luz-ambar.activa { background: #f59e0b; box-shadow: 0 0 30px #f59e0b, 0 0 60px rgba(245,158,11,0.4); border-color: #fcd34d; }
+.luz-verde.activa { background: #22c55e; box-shadow: 0 0 30px #22c55e, 0 0 60px rgba(34,197,94,0.4); border-color: #4ade80; }
+.semaforo-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-align: center; }
+.info-panel { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+.estado-texto { font-size: 22px; font-weight: 700; color: #fff; }
+.estado-sub { font-size: 14px; color: rgba(255,255,255,0.45); margin-top: 4px; }
+.contador-wrap { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; text-align: center; }
+.contador-num { font-family: 'JetBrains Mono', monospace; font-size: 56px; font-weight: 500; color: #fff; line-height: 1; transition: color 0.4s; }
+.contador-label { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 6px; letter-spacing: 0.5px; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 12px 16px; }
+.stat-val { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 500; color: #fff; }
+.stat-label { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+.historial-card { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 20px 24px; max-width: 780px; width: 100%; max-height: 140px; overflow-y: auto; }
+.historial-title { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.3); letter-spacing: 1px; margin-bottom: 10px; }
+.historial-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+.historial-item:last-child { border-bottom: none; }
+.h-evento { color: rgba(255,255,255,0.7); }
+.h-hora { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.3); }
+.badge { font-size: 10px; padding: 2px 8px; border-radius: 100px; font-family: 'JetBrains Mono', monospace; }
+.badge-rojo   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.badge-ambar  { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+.badge-verde  { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+.badge-peaton { background: rgba(96,165,250,0.15); color: #93c5fd; border: 1px solid rgba(96,165,250,0.3); }
+.btn-reporte { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; padding: 8px 20px; color: rgba(255,255,255,0.6); font-size: 12px; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.3s; }
+.btn-reporte:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.abierto { display: flex; }
+.modal { background: #0f0f1a; border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; padding: 32px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; position: relative; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.modal-title { font-size: 20px; font-weight: 700; color: #fff; }
+.modal-close { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; width: 32px; height: 32px; color: #fff; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.modal-close:hover { background: rgba(255,255,255,0.15); }
+.fecha-selector { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+.fecha-input { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 8px 14px; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 13px; flex: 1; }
+.fecha-input:focus { outline: none; border-color: rgba(255,255,255,0.3); }
+.btn-buscar { background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4); border-radius: 10px; padding: 8px 18px; color: #a5b4fc; font-size: 13px; cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 600; }
+.btn-buscar:hover { background: rgba(99,102,241,0.35); }
+.reporte-total { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 20px; text-align: center; margin-bottom: 20px; }
+.reporte-num { font-family: 'JetBrains Mono', monospace; font-size: 48px; font-weight: 500; color: #fff; }
+.reporte-label { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 4px; }
+.horas-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+.hora-item { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px; text-align: center; }
+.hora-item.pico { border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.08); }
+.hora-num { font-family: 'JetBrains Mono', monospace; font-size: 20px; color: #fff; }
+.hora-item.pico .hora-num { color: #fbbf24; }
+.hora-label { font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 2px; }
+.eventos-lista { max-height: 200px; overflow-y: auto; }
+.evento-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; color: rgba(255,255,255,0.6); font-family: 'JetBrains Mono', monospace; }
+.no-datos { text-align: center; color: rgba(255,255,255,0.3); padding: 30px; font-size: 14px; }
+.seccion-titulo { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.3); letter-spacing: 1px; margin-bottom: 10px; }
+@media (max-width: 640px) {
+  .main-card { flex-direction: column; padding: 24px; gap: 24px; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  body, html { overflow: auto; }
+  .wrapper { height: auto; min-height: 100vh; padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="bg"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+
+<div class="wrapper">
+  <div class="status-pill"><div class="status-dot"></div><span id="ws-status">conectando...</span></div>
+  <h1>Semáforo <em>IoT</em></h1>
+
+  <div class="main-card">
+    <div class="semaforo-wrap">
+      <div class="semaforo">
+        <div class="luz luz-rojo"  id="luz-rojo"></div>
+        <div class="luz luz-ambar" id="luz-ambar"></div>
+        <div class="luz luz-verde" id="luz-verde"></div>
+      </div>
+      <span class="semaforo-label">SEMÁFORO VEHICULAR</span>
+    </div>
+    <div class="info-panel">
+      <div>
+        <div class="estado-texto" id="estado-texto">Cargando...</div>
+        <div class="estado-sub"   id="estado-sub">Conectando al servidor</div>
+      </div>
+      <div class="contador-wrap">
+        <div class="contador-num" id="contador">--</div>
+        <div class="contador-label">SEGUNDOS RESTANTES</div>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-val" id="total-cruces">0</div>
+          <div class="stat-label">Cruces hoy</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="ultimo-cruce">--</div>
+          <div class="stat-label">Último cruce</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="historial-card">
+    <div class="historial-title">HISTORIAL DE EVENTOS</div>
+    <div id="historial-list"></div>
+  </div>
+
+  <button class="btn-reporte" onclick="abrirModal()">📊 Ver reporte de cruces</button>
+</div>
+
+<!-- Modal Reportes -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📊 Reporte de Cruces</span>
+      <button class="modal-close" onclick="cerrarModal()">✕</button>
+    </div>
+    <div class="fecha-selector">
+      <input type="date" class="fecha-input" id="fecha-input">
+      <button class="btn-buscar" onclick="buscarReporte()">Buscar</button>
+    </div>
+    <div id="reporte-contenido">
+      <div class="no-datos">Selecciona una fecha para ver el reporte</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ⚠️ Cambia esta IP por la IP pública de tu instancia AWS
+const WS_URL   = 'ws://3.17.29.61:8080';
+const API_BASE = 'http://3.17.29.61:3000';
+
+let ws;
+
+const estadoConfig = {
+  verde: { texto: 'Circulación normal',      sub: 'Los vehículos circulan con normalidad',  color: '#22c55e' },
+  ambar: { texto: 'Precaución',              sub: 'Peatón solicitó el paso — preparándose', color: '#f59e0b' },
+  rojo:  { texto: 'Alto — peatón cruzando',  sub: 'Vehículos detenidos, peatón cruzando',   color: '#ef4444' }
+};
+
+const badgeMap = {
+  solicitud_peaton: ['peaton', '🚶 Peatón solicitó paso'],
+  semaforo_ambar:   ['ambar',  '🟡 Semáforo en ámbar'],
+  peaton_cruza:     ['rojo',   '🔴 Peatón cruzando'],
+  volviendo_normal: ['ambar',  '🟡 Volviendo a normal'],
+  semaforo_verde:   ['verde',  '🟢 Semáforo en verde']
+};
+
+function actualizarSemaforo(semaforo, contador) {
+  ['rojo','ambar','verde'].forEach(c =>
+    document.getElementById('luz-' + c).classList.remove('activa')
+  );
+  document.getElementById('luz-' + semaforo).classList.add('activa');
+  const cfg = estadoConfig[semaforo] || estadoConfig.verde;
+  document.getElementById('estado-texto').textContent = cfg.texto;
+  document.getElementById('estado-sub').textContent   = cfg.sub;
+  document.getElementById('contador').textContent     = contador > 0 ? contador : '--';
+  document.getElementById('contador').style.color     = cfg.color;
+}
+
+function actualizarHistorial(historial) {
+  const list = document.getElementById('historial-list');
+  list.innerHTML = '';
+  historial.forEach(item => {
+    const [tipo, label] = badgeMap[item.evento] || ['verde', item.evento];
+    const div = document.createElement('div');
+    div.className = 'historial-item';
+    div.innerHTML = `<span class="h-evento"><span class="badge badge-${tipo}">${label}</span></span><span class="h-hora">${item.hora}</span>`;
+    list.appendChild(div);
+  });
+}
+
+function actualizarCruces() {
+  const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+  fetch(`${API_BASE}/api/reporte?fecha=${hoy}`)
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('total-cruces').textContent = data.total || 0;
+      if (data.eventos && data.eventos.length > 0) {
+        document.getElementById('ultimo-cruce').textContent = data.eventos[0].hora;
+      }
+    }).catch(() => {});
+}
+
+function conectarWS() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => {
+    document.getElementById('ws-status').textContent = '3.17.29.61 — en vivo';
+    document.querySelector('.status-dot').style.background = '#4ade80';
+    document.querySelector('.status-dot').style.boxShadow  = '0 0 8px #4ade80';
+  };
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    actualizarSemaforo(data.semaforo, data.contador);
+    if (data.historial) {
+      actualizarHistorial(data.historial);
+      actualizarCruces();
+    }
+  };
+  ws.onclose = () => {
+    document.getElementById('ws-status').textContent = 'reconectando...';
+    document.querySelector('.status-dot').style.background = '#f59e0b';
+    document.querySelector('.status-dot').style.boxShadow  = '0 0 8px #f59e0b';
+    setTimeout(conectarWS, 3000);
+  };
+  ws.onerror = () => ws.close();
+}
+
+function abrirModal() {
+  const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+  document.getElementById('fecha-input').value = hoy;
+  document.getElementById('modal-overlay').classList.add('abierto');
+  buscarReporte();
+}
+
+function cerrarModal() {
+  document.getElementById('modal-overlay').classList.remove('abierto');
+}
+
+document.getElementById('modal-overlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('modal-overlay')) cerrarModal();
+});
+
+function buscarReporte() {
+  const fecha = document.getElementById('fecha-input').value;
+  if (!fecha) return;
+  document.getElementById('reporte-contenido').innerHTML = '<div class="no-datos">Cargando...</div>';
+  fetch(`${API_BASE}/api/reporte?fecha=${fecha}`)
+    .then(r => r.json())
+    .then(data => renderReporte(data))
+    .catch(() => {
+      document.getElementById('reporte-contenido').innerHTML = '<div class="no-datos">Error al cargar</div>';
+    });
+}
+
+function renderReporte(data) {
+  if (data.total === 0) {
+    document.getElementById('reporte-contenido').innerHTML =
+      `<div class="no-datos">Sin cruces registrados el ${data.fecha}</div>`;
+    return;
+  }
+  const porHora = data.por_hora || {};
+  const horasConDatos = Object.entries(porHora).sort((a,b) => b[1]-a[1]);
+  const horaPico = horasConDatos[0];
+  const horasHTML = horasConDatos.map(([key, val]) => `
+    <div class="hora-item ${key === horaPico[0] ? 'pico' : ''}">
+      <div class="hora-num">${val}</div>
+      <div class="hora-label">${key}:00${key === horaPico[0] ? ' 🔥' : ''}</div>
+    </div>`).join('');
+  const eventosHTML = (data.eventos || []).reverse().map(e =>
+    `<div class="evento-item"><span>🚶 Cruce peatonal</span><span>${e.hora}</span></div>`
+  ).join('');
+  document.getElementById('reporte-contenido').innerHTML = `
+    <div class="reporte-total">
+      <div class="reporte-num">${data.total}</div>
+      <div class="reporte-label">cruces registrados el ${data.fecha}</div>
+    </div>
+    ${horasHTML ? `<div class="seccion-titulo">CRUCES POR HORA</div><div class="horas-grid">${horasHTML}</div>` : ''}
+    <div class="seccion-titulo">DETALLE DE EVENTOS</div>
+    <div class="eventos-lista">${eventosHTML}</div>
+  `;
+}
+
+actualizarCruces();
+fetch(`${API_BASE}/api/historial`).then(r => r.json()).then(actualizarHistorial).catch(() => {});
+conectarWS();
+</script>
+</body>
+</html>

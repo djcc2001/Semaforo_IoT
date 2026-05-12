@@ -103,4 +103,4 @@ Semaforo_IoT/
 
 ## 👤 Autor
 
-Desarrollado como proyecto de sistemas embebidos IoT.
+Denis Jair Cancinas Cardenas

@@ -8,8 +8,8 @@
 #define LED_VERDE   19
 #define PIN_BOOT     0  // botón BOOT integrado
 
-const char* SERVER_EVENTO = "http://3.17.29.61:3000/api/evento";
-const char* SERVER_ESTADO = "http://3.17.29.61:3000/api/estado";
+const char* SERVER_EVENTO = "http://3.131.82.32:3000/api/evento";
+const char* SERVER_ESTADO = "http://3.131.82.32:3000/api/estado";
 
 unsigned long ultimoPolling  = 0;
 unsigned long ultimoParpadeo = 0;

@@ -83,9 +83,9 @@ Semaforo_IoT/
 
 ## 📸 Capturas
 
-| Dashboard | Circuito |
+| Dashboard | Circuito | Foto |
 |-----------|----------|
-| ![Dashboard](imgs/dashboard.png) | ![Circuito](imgs/circuito.png) |
+| ![Dashboard](imgs/dashboard.png) | ![Circuito](imgs/circuito.png) | ![Foto](imgs/foto.jpeg)
 
 ---
 
